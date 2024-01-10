@@ -1,5 +1,5 @@
 """
-gaiad utility functions
+{cli_name} utility functions
 - query bank balance
 - query tx
 - node status
@@ -11,12 +11,13 @@ import subprocess
 import logging
 
 
-def check_address(address: str):
+def check_address(address: str, node_home: str = '~/.gaia', cli_name: str = 'gaiad'):
     """
-    gaiad keys parse <address>
+    {cli_name} keys parse <address>
     """
-    check = subprocess.run(["gaiad", "keys", "parse",
+    check = subprocess.run([cli_name, "keys", "parse",
                             f"{address}",
+                            f'--home={node_home}',
                             '--output=json'],
                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                            text=True)
@@ -33,13 +34,14 @@ def check_address(address: str):
     return None
 
 
-def get_balance(address: str, node: str, chain_id: str):
+def get_balance(address: str, node: str, chain_id: str, node_home: str = '~/.gaia', cli_name: str = 'gaiad'):
     """
-    gaiad query bank balances <address> <node> <chain-id>
+    {cli_name} query bank balances <address> <node> <chain-id>
     """
-    balance = subprocess.run(["gaiad", "query", "bank", "balances",
+    balance = subprocess.run([cli_name, "query", "bank", "balances",
                               f"{address}",
                               f"--node={node}",
+                              f'--home={node_home}',
                               f"--chain-id={chain_id}",
                               '--output=json'],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -57,12 +59,12 @@ def get_balance(address: str, node: str, chain_id: str):
     return None
 
 
-def get_node_status(node: str):
+def get_node_status(node: str, cli_name: str = 'gaiad'):
     """
-    gaiad status <node>
+    {cli_name} status <node>
     """
     status = subprocess.run(
-        ['gaiad', 'status', f'--node={node}'],
+        [cli_name, 'status', f'--node={node}'],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     try:
@@ -83,13 +85,14 @@ def get_node_status(node: str):
         raise key
 
 
-def get_tx_info(hash_id: str, node: str, chain_id: str):
+def get_tx_info(hash_id: str, node: str, chain_id: str,  node_home: str = '~/.gaia', cli_name: str = 'gaiad'):
     """
-    gaiad query tx <tx-hash> <node> <chain-id>
+    {cli_name} query tx <tx-hash> <node> <chain-id>
     """
-    tx_gaia = subprocess.run(['gaiad', 'query', 'tx',
+    tx_gaia = subprocess.run([cli_name, 'query', 'tx',
                               f'{hash_id}',
                               f'--node={node}',
+                              f'--home={node_home}',
                               f'--chain-id={chain_id}',
                               '--output=json'],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -123,7 +126,7 @@ def get_tx_info(hash_id: str, node: str, chain_id: str):
         raise KeyError from err
 
 
-def tx_send(request: dict):
+def tx_send(request: dict,  node_home: str = '~/.gaia', cli_name: str = 'gaiad'):
     """
     The request dictionary must include these keys:
     - "sender"
@@ -132,17 +135,18 @@ def tx_send(request: dict):
     - "fees"
     - "node"
     - "chain_id"
-    gaiad tx bank send <from address> <to address> <amount>
+    {cli_name} tx bank send <from address> <to address> <amount>
                        <fees> <node> <chain-id>
                        --keyring-backend=test -y
 
     """
-    tx_gaia = subprocess.run(['gaiad', 'tx', 'bank', 'send',
+    tx_gaia = subprocess.run([cli_name, 'tx', 'bank', 'send',
                               f'{request["sender"]}',
                               f'{request["recipient"]}',
                               f'{request["amount"]}',
                               f'--fees={request["fees"]}',
                               f'--node={request["node"]}',
+                              f'--home={node_home}',
                               f'--chain-id={request["chain_id"]}',
                               '--keyring-backend=test',
                               '--output=json',
