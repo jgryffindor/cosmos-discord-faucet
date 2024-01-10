@@ -12,7 +12,7 @@ from tabulate import tabulate
 import aiofiles as aiof
 import toml
 import discord
-import gaia_calls as gaia
+import node_calls as node
 
 # Turn Down Discord Logging
 disc_log = logging.getLogger('discord')
@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.INFO,
 config = toml.load('config.toml')
 
 try:
-    GAIA_HOME = config['gaia_home_folder']
+    NODE_HOME = config['node_home_folder']
     TX_LOG_PATH = config['transactions_log']
     ADDRESS_PREFIX = config['cosmos']['prefix']
     REQUEST_TIMEOUT = int(config['discord']['request_timeout'])
@@ -85,7 +85,7 @@ async def get_faucet_balance(chain: dict):
     """
     Returns the uatom balance
     """
-    balances = gaia.get_balance(
+    balances = node.get_balance(
         address=chain['faucet_address'],
         node=chain['node_url'],
         chain_id=chain['chain_id'])
@@ -102,10 +102,10 @@ async def balance_request(address, chain: dict):
 
     try:
         # check address is valid
-        result = gaia.check_address(address)
+        result = node.check_address(address)
         if result['human'] == ADDRESS_PREFIX:
             try:
-                balance = gaia.get_balance(
+                balance = node.get_balance(
                     address=address,
                     node=chain["node_url"],
                     chain_id=chain["chain_id"])
@@ -113,11 +113,11 @@ async def balance_request(address, chain: dict):
                 reply = reply + tabulate(balance)
                 reply = reply + '\n```\n'
             except Exception:
-                reply = '❗ gaia could not handle your request'
+                reply = '❗ node could not handle your request'
         else:
             reply = f'❗ Expected `{ADDRESS_PREFIX}` prefix'
     except Exception:
-        reply = '❗ gaia could not verify the address'
+        reply = '❗ node could not verify the address'
     return reply
 
 
@@ -127,8 +127,8 @@ async def faucet_status(chain: dict):
     """
     reply = ''
     try:
-        node_status = gaia.get_node_status(node=chain['node_url'])
-        balance = gaia.get_balance(
+        node_status = node.get_node_status(node=chain['node_url'])
+        balance = node.get_balance(
             address=chain['faucet_address'],
             node=chain['node_url'],
             chain_id=chain['chain_id'])
@@ -141,7 +141,7 @@ async def faucet_status(chain: dict):
                 f'```'
             reply = status
     except Exception:
-        reply = '❗ gaia could not handle your request'
+        reply = '❗ node could not handle your request'
     return reply
 
 
@@ -153,7 +153,7 @@ async def transaction_info(hash_id, chain: dict):
     # Extract hash ID
     if len(hash_id) == 64:
         try:
-            res = gaia.get_tx_info(
+            res = node.get_tx_info(
                 hash_id=hash_id,
                 node=chain['node_url'],
                 chain_id=chain['chain_id'])
@@ -164,7 +164,7 @@ async def transaction_info(hash_id, chain: dict):
                 f'Height:  {res["height"]}\n```'
 
         except Exception:
-            reply = '❗ gaia could not handle your request'
+            reply = '❗ node could not handle your request'
     else:
         reply = f'❗ Hash ID must be 64 characters long, received `{len(hash_id)}`'
     return reply
@@ -253,12 +253,12 @@ async def token_request(requester, address, chain: dict):
     # Check address
     try:
         # check address is valid
-        result = gaia.check_address(address)
+        result = node.check_address(address)
         if result['human'] != ADDRESS_PREFIX:
             await message.reply(f'❗ Expected `{ADDRESS_PREFIX}` prefix')
             return
     except Exception:
-        await message.reply('❗ gaia could not verify the address')
+        await message.reply('❗ node could not verify the address')
         return
 
     # Check whether the faucet has reached the daily cap
@@ -274,8 +274,8 @@ async def token_request(requester, address, chain: dict):
                        'chain_id': chain['chain_id'],
                        'node': chain['node_url']}
             try:
-                # Make gaia call and send the response back
-                transfer = gaia.tx_send(request)
+                # Make node call and send the response back
+                transfer = node.tx_send(request)
                 logging.info('%s requested tokens for %s in %s',
                              requester, address, chain['name'])
                 now = datetime.datetime.now()
